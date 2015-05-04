@@ -1,7 +1,8 @@
 require "List"
 
-serverHost = ""
-serverPort = ""
+serverHost = "ilazarev.ru"
+serverURL = "ilazarev.ru/esp/"
+serverPort = "80"
 signalPin = 1
 alarmId = 1
 
@@ -40,16 +41,22 @@ watchPin = function(pin)
   end
 end
 
+itterateList = function(list, cb)
+  isOk = true
+  while isOk do
+    isOk, payload = pcall(List.popright, list)
+    if isOk then
+      cb(payload)
+    end
+  end
+end
+
 sendPayload = function(list)
   conn = net.createConnection(net.TCP, 0)
   conn:on("connection", function(conn)
-    isOk = true
-    while isOk do
-      isOk, payload = pcall(List.poprigth, list)
-      if isOk then
-        conn:send(payload.format())
-      end
-    end
+    itterateList(list, function (payload)      
+      conn.send(Payload.format(payload))
+    end)
   end)
 
   conn:on("disconnection", function(conn)
