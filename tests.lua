@@ -15,8 +15,11 @@ function teardown()
 end
 
 function test_payload()
-  payload = Payload.new(1, 2, 3, 4)
-  assert_equal(Payload.format(payload), [[{time:"1", level="2", pin="3", id="4"}]])
+  payload = Payload.new()
+  Payload.tick(payload, 1)
+  Payload.tick(payload, 2)
+  Payload.tick(payload, 1)
+  assert_equal([[{pin_1="2",pin_2="1"}]], Payload.format(payload))
 end
 
 function test_itterate()

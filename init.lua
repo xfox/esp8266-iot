@@ -1,43 +1,38 @@
 require "List"
 
-serverHost = "ilazarev.ru"
-serverURL = "ilazarev.ru/esp/"
+serverHost = ""
+serverURL = ""
 serverPort = "80"
 signalPin = 1
 alarmId = 1
 
 
 Payload = {}
-function Payload.new(time, level, pin, id)
-  assert(time ~= nil)
-  assert(level ~= nil)
-  assert(pin ~= nil)
-  assert(id ~= nil)
-  return {
-    time=time,
-    level=level,
-    pin=pin,
-    id=id
-  }
+function Payload.new()
+  return {}
+end
+
+function Payload.tick(payload, pin)
+  if payload[pin] == nil then
+    payload[pin] = 0
+  end
+  payload[pin] = payload[pin] + 1
 end
 
 function Payload.format(payload)
-    return string.format([[{time:"%d", level="%d", pin="%d", id="%d"}]],
-      payload.time, payload.level, payload.pin, payload.id
-    )
+  formated = {}
+  for key, value in pairs(payload) do
+    formated[#formated+1] = string.format([[pin_%d="%d"]], key, value)
+  end
+  return "{" .. table.concat(formated, ',') .. "}"
 end
 
-list = List:new()
+queue = List:new()
+currentPayload = Payload.new()
 
 watchPin = function(pin)
   return function(level)
-    payload = {
-      time=tmr.time(),
-      level=level,
-      pin=pin,
-      id=node.chipid()
-    }
-    List.pushleft(list, payload)
+    currentPayload.tick(pin)
   end
 end
 
@@ -52,9 +47,12 @@ itterateList = function(list, cb)
 end
 
 sendPayload = function(list)
+  List.pushleft(queue, payload)
+  currentPayload = Payload.new()
+
   conn = net.createConnection(net.TCP, 0)
   conn:on("connection", function(conn)
-    itterateList(list, function (payload)      
+    itterateList(list, function (payload)
       conn.send(Payload.format(payload))
     end)
   end)
