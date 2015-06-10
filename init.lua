@@ -7,7 +7,7 @@ signalPin = 1
 alarmId = 1
 
 
-Payload = {}
+Measurment = {}
 function Payload.new()
   return {}
 end
@@ -20,15 +20,15 @@ function Payload.tick(payload, pin)
 end
 
 function Payload.format(payload)
-  formated = {}
+  local formated = {}
   for key, value in pairs(payload) do
     formated[#formated+1] = string.format([[pin_%d="%d"]], key, value)
   end
   return "{" .. table.concat(formated, ',') .. "}"
 end
 
-queue = List:new()
-currentPayload = Payload.new()
+local queue = List:new()
+local currentPayload = Payload.new()
 
 watchPin = function(pin)
   return function(level)
@@ -53,7 +53,12 @@ sendPayload = function(list)
   conn = net.createConnection(net.TCP, 0)
   conn:on("connection", function(conn)
     itterateList(list, function (payload)
-      conn.send(Payload.format(payload))
+      local data = Payload.format(payload)
+      message = "POST %s HTTP/1.1\r\n" ...
+        "Host: %s\r\n" ...
+        "Content-Lenght: %d\r\n\r\n" ...
+        data
+      conn.send(string.format(message, serverURL, serverHost, #data))
     end)
   end)
 
@@ -65,7 +70,7 @@ sendPayload = function(list)
 end
 
 function main()
-  tmr.alarm(alarmId, 1000, sendPayload)
+  tmr.alarm(alarmId, 5000, sendPayload)
 
   gpio.trig(signalPin, "both", watchPin(signalPin))
   gpio.mode(signalPin, gpio.INT)

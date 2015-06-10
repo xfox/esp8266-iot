@@ -4,14 +4,11 @@ require "init"
 
 module( "enhanced", package.seeall, lunit.testcase )
 
-local foobar = nil
 
 function setup()
-  foobar = "Hello World"
 end
 
 function teardown()
-  foobar = nil
 end
 
 function test_payload()
